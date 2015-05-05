@@ -1,10 +1,10 @@
 
-# * flattens an array
-## or in a function arg, acts like a rest arg I think
-
+require 'Filigree'
+include Filigree
 
 def build_adt_variant(attributes)
   Class.new() do
+    extend Filigree::Destructurable
     @fields = attributes
     attr_accessor *@fields
 
@@ -21,7 +21,10 @@ def build_adt_variant(attributes)
         send "#{attr}=", val
       end
     end
-
+    
+    def destructure(_)
+      self.class.fields
+    end
     
     def self.inherited(subclass)
       error = "Illegal attempt to subclass #{self} with
@@ -34,7 +37,6 @@ def build_adt_variant(attributes)
       error += " class #{self}"
       raise RuntimeError, error
     end
-    self.freeze
   end
 end
   
@@ -44,7 +46,7 @@ def define_adt(name, variant_array)
   variant_array.each do |var|    
     ## define the class, assign it to 'adt_variant'
     ## create the variant
-    Object.const_set var[0], build_adt_variant(var[1])
+    Object.const_set(var[0], build_adt_variant(var[1]))
   end
   true
 end
@@ -56,9 +58,9 @@ define_adt("Family",
            ["Alice", [:age, :sports]]])
 
 
-Bob.new(42, "All Sports")
+the_bob = Bob.new(42, "All Sports")
 
-##Bob.new()
+#Bob.new()
 
 ## errors on both!
 # class Bobby < Bob
@@ -69,3 +71,13 @@ Bob.new(42, "All Sports")
 #     puts "goodbye!"
 #   end
 # end
+
+
+match the_bob do
+  with(Bob.(age, hobbies)) do
+    puts "Bob likes #{hobbies}"
+  end
+  with(Alice.(age, sports)) do
+    puts "it's alice!"
+  end
+end
