@@ -2,8 +2,10 @@
 require 'Filigree'
 include Filigree
 
-def build_adt_variant(attributes)
-  Class.new() do
+
+## Function to build each adt variant
+def build_adt_variant(name, attributes)
+  Class.new(name) do
     extend Filigree::Destructurable
     @fields = attributes
     attr_accessor *@fields
@@ -37,17 +39,26 @@ def build_adt_variant(attributes)
       error += " class #{self}"
       raise RuntimeError, error
     end
+    self.freeze
   end
 end
-  
+
+
+
+## function to build the adt as a whole
 def define_adt(name, variant_array)
+  parent_klass = Object.const_set name, Class.new()
+  
   ## for each variant in the array,
   ## build a class
   variant_array.each do |var|    
     ## define the class, assign it to 'adt_variant'
     ## create the variant
-    Object.const_set(var[0], build_adt_variant(var[1]))
+    Object.const_set(var[0], build_adt_variant(parent_klass, var[1]))
   end
+
+  parent_klass.freeze
+
   true
 end
 
